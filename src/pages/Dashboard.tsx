@@ -9,7 +9,6 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Camera,
   LogOut,
   User,
@@ -22,9 +21,13 @@ import { useNavigate } from "react-router-dom";
 import ReportCard from "@/components/ReportCard";
 import StatsCard from "@/components/StatsCard";
 import ReportModal from "@/components/ReportModal";
+import RewardsCard from "@/components/RewardsCard";
+import RedeemModal from "@/components/RedeemModal";
 
 const Dashboard = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const userPoints = 1250; // This would come from your backend
   const navigate = useNavigate();
 
   const reports = [
@@ -215,21 +218,11 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Map Preview */}
-            <div className="bg-card-gradient rounded-2xl p-6 border border-border card-shadow">
-              <h3 className="text-lg font-bold text-foreground mb-4">
-                Hotspot Areas
-              </h3>
-              <div className="aspect-square rounded-xl bg-secondary/50 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&h=400&fit=crop')] opacity-20 bg-cover bg-center" />
-                <div className="relative z-10 text-center p-4">
-                  <MapPin className="w-12 h-12 text-accent mx-auto mb-3" />
-                  <p className="text-muted-foreground text-sm">
-                    Interactive map coming soon
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Rewards Card */}
+            <RewardsCard 
+              points={userPoints} 
+              onRedeem={() => setIsRedeemModalOpen(true)} 
+            />
           </motion.div>
         </div>
       </main>
@@ -254,6 +247,12 @@ const Dashboard = () => {
       <ReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+      />
+
+      <RedeemModal
+        isOpen={isRedeemModalOpen}
+        onClose={() => setIsRedeemModalOpen(false)}
+        availablePoints={userPoints}
       />
     </div>
   );
