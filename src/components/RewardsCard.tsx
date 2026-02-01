@@ -1,22 +1,25 @@
 import { motion } from "framer-motion";
-import { Gift, IndianRupee, Smartphone, ArrowRight, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Gift, Sparkles, Award, ShoppingBag, Shield, Crown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface RewardsCardProps {
   points: number;
-  onRedeem?: () => void;
 }
 
-const RewardsCard = ({ points, onRedeem }: RewardsCardProps) => {
-  const pointsToRupees = Math.floor(points / 100); // 100 points = ₹1
+const RewardsCard = ({ points }: RewardsCardProps) => {
   const nextMilestone = Math.ceil(points / 500) * 500;
   const progressToMilestone = ((points % 500) / 500) * 100;
 
-  const rewardTiers = [
-    { points: 500, reward: "₹5 UPI Cashback", icon: "🎁" },
-    { points: 1000, reward: "₹12 UPI Transfer", icon: "💰" },
-    { points: 2500, reward: "₹30 + Eco Badge", icon: "🏆" },
+  const badges = [
+    { name: "Eco Warrior", icon: Shield, unlocked: points >= 500, requirement: 500 },
+    { name: "Green Champion", icon: Crown, unlocked: points >= 1000, requirement: 1000 },
+    { name: "Earth Guardian", icon: Award, unlocked: points >= 2500, requirement: 2500 },
+  ];
+
+  const vouchers = [
+    { brand: "Eco-Friendly Store", discount: "20% off", available: false },
+    { brand: "Green Cafe", discount: "Free coffee", available: false },
+    { brand: "Sustainable Fashion", discount: "15% off", available: false },
   ];
 
   return (
@@ -36,7 +39,7 @@ const RewardsCard = ({ points, onRedeem }: RewardsCardProps) => {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">Eco Rewards</h3>
-            <p className="text-sm text-muted-foreground">Redeem via UPI</p>
+            <p className="text-sm text-muted-foreground">Earn & redeem</p>
           </div>
         </div>
         <Sparkles className="w-5 h-5 text-accent animate-pulse" />
@@ -48,71 +51,111 @@ const RewardsCard = ({ points, onRedeem }: RewardsCardProps) => {
           <span className="text-3xl font-bold text-gradient">{points.toLocaleString()}</span>
           <span className="text-muted-foreground text-sm">points</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <IndianRupee className="w-4 h-4 text-success" />
-          <span className="text-foreground">Worth <span className="font-semibold text-success">₹{pointsToRupees}</span> in UPI transfers</span>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Keep reporting to earn more points!
+        </p>
       </div>
 
       {/* Progress to next milestone */}
       <div className="mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-muted-foreground">Next milestone</span>
+          <span className="text-muted-foreground">Next badge</span>
           <span className="text-foreground font-medium">{points} / {nextMilestone}</span>
         </div>
         <Progress value={progressToMilestone} className="h-2" />
       </div>
 
-      {/* Reward Tiers */}
-      <div className="space-y-3 mb-6">
-        <p className="text-sm font-medium text-foreground">Reward Tiers</p>
-        {rewardTiers.map((tier, index) => (
-          <motion.div
-            key={tier.points}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-              points >= tier.points
-                ? "bg-accent/10 border-accent/30"
-                : "bg-secondary/30 border-border"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">{tier.icon}</span>
-              <div>
-                <p className={`text-sm font-medium ${points >= tier.points ? "text-accent" : "text-foreground"}`}>
-                  {tier.reward}
-                </p>
-                <p className="text-xs text-muted-foreground">{tier.points} points</p>
+      {/* Exclusive Badges */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Award className="w-4 h-4 text-accent" />
+          <p className="text-sm font-medium text-foreground">Exclusive Social Media Badges</p>
+        </div>
+        <div className="space-y-2">
+          {badges.map((badge, index) => (
+            <motion.div
+              key={badge.name}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                badge.unlocked
+                  ? "bg-accent/10 border-accent/30"
+                  : "bg-secondary/30 border-border"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  badge.unlocked ? "bg-accent/20" : "bg-muted"
+                }`}>
+                  <badge.icon className={`w-4 h-4 ${badge.unlocked ? "text-accent" : "text-muted-foreground"}`} />
+                </div>
+                <div>
+                  <p className={`text-sm font-medium ${badge.unlocked ? "text-accent" : "text-foreground"}`}>
+                    {badge.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{badge.requirement} points</p>
+                </div>
               </div>
-            </div>
-            {points >= tier.points && (
-              <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full font-medium">
-                Unlocked
-              </span>
-            )}
-          </motion.div>
-        ))}
+              {badge.unlocked ? (
+                <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full font-medium">
+                  Unlocked!
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {badge.requirement - points} pts to go
+                </span>
+              )}
+            </motion.div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-3 text-center">
+          Use these badges on your social media profiles to show your eco-commitment! 🌱
+        </p>
       </div>
 
-      {/* UPI Redeem Button */}
-      <Button
-        variant="accent"
-        className="w-full group"
-        onClick={onRedeem}
-        disabled={points < 500}
-      >
-        <Smartphone className="w-4 h-4 mr-2" />
-        Redeem to UPI
-        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-      </Button>
+      {/* Brand Vouchers */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <ShoppingBag className="w-4 h-4 text-primary" />
+          <p className="text-sm font-medium text-foreground">Brand Vouchers</p>
+        </div>
+        
+        <div className="space-y-2">
+          {vouchers.map((voucher, index) => (
+            <motion.div
+              key={voucher.brand}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + index * 0.1 }}
+              className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border opacity-60"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground/70">{voucher.brand}</p>
+                  <p className="text-xs text-muted-foreground">{voucher.discount}</p>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                Coming Soon
+              </span>
+            </motion.div>
+          ))}
+        </div>
 
-      {points < 500 && (
-        <p className="text-xs text-muted-foreground text-center mt-3">
-          Earn {500 - points} more points to unlock UPI redemption
-        </p>
-      )}
+        <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <p className="text-sm text-center text-muted-foreground">
+            🎉 <span className="text-foreground font-medium">Exciting partnerships coming soon!</span>
+            <br />
+            <span className="text-xs">
+              Redeem your points for vouchers from eco-friendly brands and apps.
+            </span>
+          </p>
+        </div>
+      </div>
     </motion.div>
   );
 };
