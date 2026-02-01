@@ -2,12 +2,12 @@ import { MapPin, Clock, CheckCircle2, AlertTriangle, Loader2 } from "lucide-reac
 import { cn } from "@/lib/utils";
 
 interface ReportCardProps {
-  id: number;
+  id?: string | number;
   title: string;
   location: string;
   status: "pending" | "in-progress" | "resolved";
   time: string;
-  image: string;
+  image?: string;
 }
 
 const statusConfig = {
@@ -35,12 +35,18 @@ const ReportCard = ({ title, location, status, time, image }: ReportCardProps) =
   return (
     <div className="bg-card-gradient rounded-xl border border-border p-4 hover:border-primary/50 transition-all duration-300 card-shadow group">
       <div className="flex gap-4">
-        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          />
+        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
+          {image ? (
+            <img
+              src={image}
+              alt={title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <MapPin className="w-8 h-8 text-muted-foreground" />
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">

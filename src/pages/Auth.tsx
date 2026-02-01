@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Leaf, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Leaf, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,35 +18,146 @@ const Auth = () => {
     email: "",
     password: "",
   });
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        navigate("/dashboard");
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push("At least 8 characters");
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("One lowercase letter");
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("One uppercase letter");
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const password = e.target.value;
+    setFormData({ ...formData, password });
+    if (!isLogin) {
+      setPasswordErrors(validatePassword(password));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password on signup
+    if (!isLogin) {
+      const errors = validatePassword(formData.password);
+      if (errors.length > 0) {
+        toast({
+          title: "Invalid password",
+          description: "Please meet all password requirements",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
 
-    // Simulate auth - replace with real auth later
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Welcome back!",
+          description: "Redirecting to dashboard...",
+        });
+        navigate("/dashboard");
+      } else {
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: formData.name,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
+      }
+    } catch (error: any) {
+      let errorMessage = "An error occurred";
+      
+      if (error.message.includes("User already registered")) {
+        errorMessage = "This email is already registered. Please sign in instead.";
+      } else if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.message.includes("Email not confirmed")) {
+        errorMessage = "Please verify your email before signing in.";
+      } else {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: isLogin ? "Welcome back!" : "Account created!",
-        description: "Redirecting to dashboard...",
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
       });
-      navigate("/dashboard");
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const passwordRequirements = [
+    { label: "At least 8 characters", check: formData.password.length >= 8 },
+    { label: "One lowercase letter", check: /[a-z]/.test(formData.password) },
+    { label: "One uppercase letter", check: /[A-Z]/.test(formData.password) },
+  ];
+
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      <AnimatedBackground />
+      
       {/* Left Panel - Branding */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
-        className="hidden lg:flex lg:w-1/2 bg-hero-gradient relative overflow-hidden items-center justify-center p-12"
+        className="hidden lg:flex lg:w-1/2 bg-hero-gradient relative overflow-hidden items-center justify-center p-12 z-10"
       >
         {/* Background decorative elements */}
         <div className="absolute inset-0 opacity-10">
@@ -110,7 +223,7 @@ const Auth = () => {
       </motion.div>
 
       {/* Right Panel - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -217,7 +330,7 @@ const Auth = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={formData.password}
-                    onChange={handleInputChange}
+                    onChange={handlePasswordChange}
                     className="pl-11 pr-11 h-12 bg-secondary border-border focus:border-primary"
                     required
                   />
@@ -229,6 +342,29 @@ const Auth = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+
+                {/* Password Requirements */}
+                {!isLogin && formData.password.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="mt-3 p-3 rounded-lg bg-secondary/50 space-y-2"
+                  >
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Password requirements:</p>
+                    {passwordRequirements.map((req) => (
+                      <div key={req.label} className="flex items-center gap-2">
+                        {req.check ? (
+                          <Check className="w-4 h-4 text-success" />
+                        ) : (
+                          <X className="w-4 h-4 text-destructive" />
+                        )}
+                        <span className={`text-xs ${req.check ? "text-success" : "text-muted-foreground"}`}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
               </div>
 
               {isLogin && (
@@ -247,7 +383,7 @@ const Auth = () => {
                 variant="accent"
                 size="lg"
                 className="w-full"
-                disabled={isLoading}
+                disabled={isLoading || (!isLogin && passwordErrors.length > 0 && formData.password.length > 0)}
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
